@@ -3,6 +3,7 @@ package com.example.yamicomputer
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,10 +19,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.yamicomputer.navigation.NavGraph
 import com.example.yamicomputer.screen.LoginScreen
 import com.example.yamicomputer.ui.theme.YamiComputerTheme
+import com.example.yamicomputer.viewmodel.SharedViewModel
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var navController: NavHostController
+    private val viewModel: SharedViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,7 +32,7 @@ class MainActivity : ComponentActivity() {
             YamiComputerTheme {
 
             navController = rememberNavController()
-            NavGraph(navHostController = navController)
+            NavGraph(navHostController = navController, sharedViewModel = viewModel)
 
             }
         }
