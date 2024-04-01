@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "895791293016",
+    "firebase_url": "https://yami-computer-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "yami-computer",
+    "storage_bucket": "yami-computer.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:895791293016:android:a086cb8eb931d5921b202d",
+        "android_client_info": {
+          "package_name": "com.example.yamicomputer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZRh8bsDLsGXTzdOOpNxwyhe9hS-UCmr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
