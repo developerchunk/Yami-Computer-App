@@ -52,11 +52,9 @@ import androidx.navigation.NavController
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.stringToComplaintStatus
-import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.ui.theme.BrightRed
 import com.example.yamicomputer.viewmodel.SharedViewModel
 import com.google.firebase.Firebase
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
@@ -121,9 +119,6 @@ fun AddComplaintScreen(
         mutableStateOf(false)
     }
 
-    // for firebase auth and callback
-    val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
-
     var deleteClicked by rememberSaveable {
         mutableStateOf(false)
     }
@@ -159,10 +154,10 @@ fun AddComplaintScreen(
                 }
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent))
         }
-    ) {
+    ) { paddingValues ->
         Column(
             modifier = Modifier
-                .padding(it)
+                .padding(paddingValues)
                 .fillMaxSize()
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.Center,

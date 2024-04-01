@@ -47,7 +47,6 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
-import com.google.firebase.database.annotations.Nullable
 import com.google.firebase.database.database
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,12 +154,12 @@ fun HomeScreen(
                 }
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBlue))
         }
-    ) {
+    ) { paddingValues ->
 
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(it)
+                .padding(paddingValues)
         ) {
 
             Column(

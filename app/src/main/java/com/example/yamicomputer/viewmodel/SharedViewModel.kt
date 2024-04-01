@@ -1,9 +1,7 @@
 package com.example.yamicomputer.viewmodel
 
-import android.util.Log
 import androidx.annotation.Keep
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.yamicomputer.data.ComplaintData
@@ -37,9 +35,9 @@ class SharedViewModel : ViewModel() {
         return mAuth.currentUser != null
     }
 
-    suspend fun isProfileCreated(): ProfileData {
+    private suspend fun isProfileCreated(): ProfileData {
 
-        var dataSet: MutableState<ProfileData> = mutableStateOf(ProfileData())
+        val dataSet: MutableState<ProfileData> = mutableStateOf(ProfileData())
 
         try {
             val userId: FirebaseUser = mAuth.currentUser!!
@@ -47,7 +45,6 @@ class SharedViewModel : ViewModel() {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     // Get the data as a User object
                     dataSet.value = dataSnapshot.getValue<ProfileData>()!!
-                    Log.d("logs_iotyr", dataSet.toString())
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -56,12 +53,11 @@ class SharedViewModel : ViewModel() {
             })
 
 
-        } catch (e: Exception) {
+        } catch (_: Exception) {
 
         }
 
         delay(1000)
-        Log.d("logs_iotyr", dataSet.value.toString())
         return dataSet.value
     }
 
@@ -69,7 +65,6 @@ class SharedViewModel : ViewModel() {
 
         val validation: MutableState<Boolean> = mutableStateOf(isUserLoggedIn() && isProfileCreated().name.isNotEmpty())
         
-        Log.d("logs_ior", validation.value.toString())
         return validation.value
     }
 

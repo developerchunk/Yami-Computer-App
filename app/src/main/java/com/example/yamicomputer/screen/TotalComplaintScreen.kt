@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,15 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
-import com.example.yamicomputer.navigation.Routes
-import com.example.yamicomputer.navigation.Routes.*
+import com.example.yamicomputer.navigation.Routes.AddComplaintScreen
 import com.example.yamicomputer.ui.theme.DarkBlue
 import com.example.yamicomputer.ui.theme.Purple40
 import com.example.yamicomputer.ui.theme.Purple80
@@ -51,7 +49,6 @@ import com.google.firebase.Firebase
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.annotations.Nullable
 import com.google.firebase.database.database
 import java.util.Locale
 
@@ -115,7 +112,7 @@ fun TotalComplaintScreen(
             }
 
             override fun onChildMoved(
-                snapshot: DataSnapshot, @Nullable previousChildName: String?
+                snapshot: DataSnapshot, previousChildName: String?
             ) {
                 // this method is called when we move our
                 // child in our database.
@@ -143,7 +140,7 @@ fun TotalComplaintScreen(
                     }) {
 
                         Icon(
-                            imageVector = Icons.Rounded.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
                             contentDescription = "add complaint",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp)
