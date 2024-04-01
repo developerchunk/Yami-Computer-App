@@ -1,5 +1,7 @@
 package com.example.yamicomputer.screen
 
+import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -31,6 +33,7 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,6 +63,8 @@ fun TotalComplaintScreen(
 ) {
 
     val complaintStatus by sharedViewModel.compliantStatus
+    val id by sharedViewModel.id
+    val deleteComplaint by sharedViewModel.deleteCompliant
 
     val complaintDataList = remember {
         mutableStateListOf<ComplaintData>()
@@ -67,10 +72,26 @@ fun TotalComplaintScreen(
     val firebaseDatabase = Firebase.database
     val databaseReference = firebaseDatabase.getReference("customer-complaints")
 
+    val context = LocalContext.current
+
+
     LaunchedEffect(key1 = Unit) {
+
+        if (deleteComplaint) {
+            databaseReference.child(id).removeValue().addOnSuccessListener {
+                Toast.makeText(context, "Successfully deleted Complaint!", Toast.LENGTH_SHORT)
+                    .show()
+                sharedViewModel.deleteCompliant.value = false
+            }.addOnCanceledListener {
+                Toast.makeText(context, "Error while deleting Complaint!", Toast.LENGTH_SHORT)
+                    .show()
+                sharedViewModel.deleteCompliant.value = false
+            }
+        }
+
         databaseReference.addChildEventListener(object : ChildEventListener {
             override fun onChildAdded(
-                snapshot: DataSnapshot, @Nullable previousChildName: String?
+                snapshot: DataSnapshot, previousChildName: String?
             ) {
                 // this method is called when new child is added to
                 // our data base and after adding new child
@@ -79,7 +100,7 @@ fun TotalComplaintScreen(
             }
 
             override fun onChildChanged(
-                snapshot: DataSnapshot, @Nullable previousChildName: String?
+                snapshot: DataSnapshot, previousChildName: String?
             ) {
                 // this method is called when the new child is added.
                 // when the new child is added to our list we will be called
@@ -146,7 +167,11 @@ fun TotalComplaintScreen(
         floatingActionButton = {
             FloatingActionButton(
                 modifier = Modifier.padding(bottom = 30.dp),
-                onClick = { navController.navigate(AddComplaintScreen.id) },
+                onClick = {
+                    sharedViewModel.id.value = ""
+                    sharedViewModel.complaintData.value = ComplaintData()
+                    navController.navigate(AddComplaintScreen.id)
+                },
                 containerColor = Purple40
             ) {
                 Icon(
@@ -164,7 +189,7 @@ fun TotalComplaintScreen(
                 .fillMaxSize(),
         ) {
 
-            ComplaintListUI(complaintDataList, complaintStatus)
+            ComplaintListUI(complaintDataList, complaintStatus, sharedViewModel, navController)
 
         }
     }
@@ -174,12 +199,14 @@ fun TotalComplaintScreen(
 @Composable
 fun ComplaintListUI(
     list: SnapshotStateList<ComplaintData>,
-    complaintStatus: ComplaintStatus
+    complaintStatus: ComplaintStatus,
+    sharedViewModel: SharedViewModel,
+    navController: NavController
 ) {
 
     LazyColumn {
 
-        items(list.filterComplaintStatus(complaintStatus)) {
+        items(list.reversed().filterComplaintStatus(complaintStatus)) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -187,7 +214,13 @@ fun ComplaintListUI(
                 colors = CardDefaults.cardColors(containerColor = Purple80),
             ) {
 
-                Column(modifier = Modifier.padding(15.dp)) {
+                Column(modifier = Modifier
+                    .padding(15.dp)
+                    .clickable {
+                        sharedViewModel.id.value = it.complaintId
+                        sharedViewModel.complaintData.value = it
+                        navController.navigate(AddComplaintScreen.id)
+                    }) {
 
                     Text(text = it.name)
                     Text(text = it.date)

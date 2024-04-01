@@ -171,7 +171,7 @@ fun HomeScreen(
                 // total complaints
                 Card(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 10.dp)
                         .fillMaxWidth()
                         .clickable {
                             sharedViewModel.compliantStatus.value = ComplaintStatus.NOTHING
@@ -190,7 +190,7 @@ fun HomeScreen(
                 // pending complaints
                 Card(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 10.dp)
                         .fillMaxWidth()
                         .clickable {
                             sharedViewModel.compliantStatus.value = ComplaintStatus.PENDING
@@ -210,7 +210,7 @@ fun HomeScreen(
                 // ongoing complaints
                 Card(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 10.dp)
                         .fillMaxWidth()
                         .clickable {
                             sharedViewModel.compliantStatus.value = ComplaintStatus.ONGOING
@@ -230,7 +230,7 @@ fun HomeScreen(
                 // complete complaints
                 Card(
                     modifier = Modifier
-                        .padding(0.dp)
+                        .padding(vertical = 10.dp)
                         .fillMaxWidth()
                         .clickable {
                             sharedViewModel.compliantStatus.value = ComplaintStatus.COMPLETE

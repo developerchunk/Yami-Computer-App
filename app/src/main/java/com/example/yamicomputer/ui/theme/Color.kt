@@ -12,3 +12,4 @@ val Pink40 = Color(0xFF7D5260)
 
 val UIBlue = Color(0xFF1E90FF)
 val DarkBlue = Color(0xFF16212B)
+val BrightRed = Color(0xFFEE4B2B)

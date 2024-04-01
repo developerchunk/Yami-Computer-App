@@ -20,3 +20,13 @@ enum class ComplaintStatus {
     PENDING,
     NOTHING
 }
+
+fun String.stringToComplaintStatus(): ComplaintStatus {
+    return when (this) {
+        ComplaintStatus.ONGOING.name -> ComplaintStatus.ONGOING
+        ComplaintStatus.COMPLETE.name -> ComplaintStatus.COMPLETE
+        ComplaintStatus.PENDING.name -> ComplaintStatus.PENDING
+        ComplaintStatus.NOTHING.name -> ComplaintStatus.NOTHING
+        else -> {ComplaintStatus.NOTHING}
+    }
+}
