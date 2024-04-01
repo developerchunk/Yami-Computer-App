@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
+import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.data.ProfileData
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -68,6 +69,8 @@ class SharedViewModel : ViewModel() {
         return validation.value
     }
 
+    /** This variable stores the enum value for use of ProfileCreateScreen as update profile or create profile **/
+    var profileAction: MutableState<ProfileActions> = mutableStateOf(ProfileActions.CREATE_PROFILE)
 
 
 }

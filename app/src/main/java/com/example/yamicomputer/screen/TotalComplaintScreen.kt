@@ -141,7 +141,7 @@ fun TotalComplaintScreen(
 
                         Icon(
                             imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "add complaint",
+                            contentDescription = "back",
                             tint = Color.White,
                             modifier = Modifier.size(28.dp)
                         )

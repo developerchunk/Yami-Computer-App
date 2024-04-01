@@ -36,7 +36,7 @@ fun NavGraph(
         }
 
         composable(route = Routes.ProfileCreateScreen.id) {
-            ProfileCreateScreen(navController = navHostController)
+            ProfileCreateScreen(navController = navHostController, sharedViewModel = sharedViewModel)
         }
 
         composable(route = Routes.AddComplaintScreen.id) {

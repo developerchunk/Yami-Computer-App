@@ -35,6 +35,7 @@ import androidx.navigation.NavController
 import com.example.yamicomputer.R
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
+import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.data.ProfileData
 import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.ui.theme.DarkBlue
@@ -140,6 +141,7 @@ fun HomeScreen(
                         color = Color.White
                     )
                     IconButton(onClick = {
+                        sharedViewModel.profileAction.value = ProfileActions.UPDATE_PROFILE
                         navController.navigate(Routes.ProfileCreateScreen.id)
                     }) {
 

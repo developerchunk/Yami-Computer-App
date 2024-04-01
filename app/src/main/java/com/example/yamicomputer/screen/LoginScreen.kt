@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.yamicomputer.R
+import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.viewmodel.SharedViewModel
 import com.google.firebase.FirebaseException
@@ -82,6 +83,7 @@ fun LoginScreen(
             if (sharedViewModel.isProfileComplete()) {
                 navController.navigate(Routes.HomeScreen.id)
             } else if (sharedViewModel.isUserLoggedIn()) {
+                sharedViewModel.profileAction.value = ProfileActions.CREATE_PROFILE
                 navController.navigate(Routes.ProfileCreateScreen.id)
             }
 
@@ -218,6 +220,7 @@ fun LoginScreen(
                         context,
                         verification = {verified ->
                             if (verified) {
+                                sharedViewModel.profileAction.value = ProfileActions.CREATE_PROFILE
                                 navController.popBackStack()
                                 navController.navigate(Routes.ProfileCreateScreen.id)
                             }
