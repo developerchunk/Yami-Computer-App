@@ -1,5 +1,6 @@
 package com.example.yamicomputer.screen
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,10 +39,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.yamicomputer.data.ComplaintData
-import com.example.yamicomputer.data.ComplaintStatus
-import com.example.yamicomputer.data.ProfileActions
-import com.example.yamicomputer.navigation.Routes.AddComplaintScreen
+import com.example.yamicomputer.data.ProductActions
+import com.example.yamicomputer.data.ProductData
+import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.ui.theme.DarkBlue
 import com.example.yamicomputer.ui.theme.Purple40
 import com.example.yamicomputer.ui.theme.Purple80
@@ -51,39 +51,37 @@ import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.database
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TotalComplaintScreen(
+fun AllProductsScreen(
     navController: NavController,
     sharedViewModel: SharedViewModel
 ) {
 
-    val complaintStatus by sharedViewModel.compliantStatus
-    val id by sharedViewModel.id
-    val deleteComplaint by sharedViewModel.deleteCompliant
+    val id by sharedViewModel.productID
+    val deleteProduct by sharedViewModel.deleteProduct
 
-    val complaintDataList = remember {
-        mutableStateListOf<ComplaintData>()
+    val productDataList = remember {
+        mutableStateListOf<ProductData>()
     }
     val firebaseDatabase = Firebase.database
-    val databaseReference = firebaseDatabase.getReference("customer-complaints")
+    val databaseReference = firebaseDatabase.getReference("all-products")
 
     val context = LocalContext.current
 
-
     LaunchedEffect(key1 = Unit) {
 
-        if (deleteComplaint) {
+        // delete product
+        if (deleteProduct) {
             databaseReference.child(id).removeValue().addOnSuccessListener {
                 Toast.makeText(context, "Successfully deleted Complaint!", Toast.LENGTH_SHORT)
                     .show()
-                sharedViewModel.deleteCompliant.value = false
+                sharedViewModel.deleteProduct.value = false
             }.addOnCanceledListener {
                 Toast.makeText(context, "Error while deleting Complaint!", Toast.LENGTH_SHORT)
                     .show()
-                sharedViewModel.deleteCompliant.value = false
+                sharedViewModel.deleteProduct.value = false
             }
         }
 
@@ -94,7 +92,8 @@ fun TotalComplaintScreen(
                 // this method is called when new child is added to
                 // our data base and after adding new child
                 // we are adding that item inside our  list
-                complaintDataList.add(snapshot.getValue(ComplaintData::class.java)!!)
+                val data = snapshot.getValue(ProductData::class.java)!!
+                productDataList.add(data)
             }
 
             override fun onChildChanged(
@@ -150,10 +149,7 @@ fun TotalComplaintScreen(
                     }
                     Text(
                         modifier = Modifier.padding(start = 15.dp),
-                        text = "${
-                            if (complaintStatus == ComplaintStatus.NOTHING) "Total" else complaintStatus.name.lowercase()
-                                .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                        } Complaint",
+                        text = "All Products",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Medium,
                         color = Color.White
@@ -166,15 +162,16 @@ fun TotalComplaintScreen(
             FloatingActionButton(
                 modifier = Modifier.padding(bottom = 30.dp),
                 onClick = {
-                    sharedViewModel.id.value = ""
-                    sharedViewModel.complaintData.value = ComplaintData()
-                    navController.navigate(AddComplaintScreen.id)
+                    sharedViewModel.productID.value = ""
+                    sharedViewModel.productData.value = ProductData()
+                    sharedViewModel.productAction.value = ProductActions.CREATE
+                    navController.navigate(Routes.AddProductScreen.id)
                 },
                 containerColor = Purple40
             ) {
                 Icon(
                     imageVector = Icons.Rounded.Add,
-                    contentDescription = "add complaint",
+                    contentDescription = "add product",
                     tint = Color.White,
                     modifier = Modifier.size(32.dp)
                 )
@@ -187,7 +184,11 @@ fun TotalComplaintScreen(
                 .fillMaxSize(),
         ) {
 
-            ComplaintListUI(complaintDataList, complaintStatus, sharedViewModel, navController, profileActions = if (complaintStatus == ComplaintStatus.COMPLETE || complaintStatus == ComplaintStatus.OUTWARDS) ProfileActions.OUTWARD_COMPLAINT else ProfileActions.UPDATE_PROFILE)
+            ProductListUI(
+                list = productDataList,
+                sharedViewModel = sharedViewModel,
+                navController = navController,
+            )
 
         }
     }
@@ -195,17 +196,15 @@ fun TotalComplaintScreen(
 }
 
 @Composable
-fun ComplaintListUI(
-    list: SnapshotStateList<ComplaintData>,
-    complaintStatus: ComplaintStatus,
+fun ProductListUI(
+    list: SnapshotStateList<ProductData>,
     sharedViewModel: SharedViewModel,
     navController: NavController,
-    profileActions: ProfileActions = ProfileActions.UPDATE_PROFILE
 ) {
 
     LazyColumn {
 
-        items(list.reversed().filterComplaintStatus(complaintStatus)) {
+        items(list.reversed()) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -216,16 +215,17 @@ fun ComplaintListUI(
                 Column(modifier = Modifier
                     .padding(15.dp)
                     .clickable {
-                        sharedViewModel.id.value = it.complaintId
-                        sharedViewModel.complaintData.value = it
-                        sharedViewModel.profileAction.value = profileActions
-                        navController.navigate(AddComplaintScreen.id)
+                        sharedViewModel.productID.value = it.productID
+                        sharedViewModel.productData.value = it
+                        Log.d("product-data", it.toString())
+                        sharedViewModel.productAction.value = ProductActions.UPDATE
+                        navController.navigate(Routes.AddProductScreen.id)
                     }) {
 
                     Text(text = it.name)
                     Text(text = it.date)
-                    Text(text = it.item)
-                    Text(text = it.problem)
+                    Text(text = it.product)
+                    Text(text = it.description)
                     Text(text = it.status)
 
                 }
@@ -233,11 +233,5 @@ fun ComplaintListUI(
             }
         }
     }
-
-}
-
-fun List<ComplaintData>.filterComplaintStatus(complaintStatus: ComplaintStatus): List<ComplaintData> {
-
-    return if (complaintStatus != ComplaintStatus.NOTHING) this.filter { it.status == complaintStatus.name } else this
 
 }

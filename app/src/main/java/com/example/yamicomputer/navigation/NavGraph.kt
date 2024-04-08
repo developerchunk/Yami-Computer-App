@@ -5,12 +5,14 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.example.yamicomputer.screen.AddComplaintScreen
+import com.example.yamicomputer.screen.AddProductScreen
+import com.example.yamicomputer.screen.AllProductsScreen
 import com.example.yamicomputer.screen.HomeScreen
 import com.example.yamicomputer.screen.LoginScreen
 import com.example.yamicomputer.screen.ProfileCreateScreen
 import com.example.yamicomputer.screen.SplashScreen
 import com.example.yamicomputer.screen.TotalComplaintScreen
-import com.example.yamicomputer.viewmodel.SharedViewModel
+import com.example.yamicomputer.logic.SharedViewModel
 
 @Composable
 fun NavGraph(
@@ -48,6 +50,20 @@ fun NavGraph(
 
         composable(route = Routes.TotalComplaintScreen.id) {
             TotalComplaintScreen(
+                navController = navHostController,
+                sharedViewModel = sharedViewModel
+            )
+        }
+
+        composable(route = Routes.AddProductScreen.id) {
+            AddProductScreen(
+                navController = navHostController,
+                sharedViewModel = sharedViewModel
+            )
+        }
+
+        composable(route = Routes.AllProductsScreen.id) {
+            AllProductsScreen(
                 navController = navHostController,
                 sharedViewModel = sharedViewModel
             )

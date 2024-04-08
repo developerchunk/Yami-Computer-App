@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.yamicomputer.R
 import com.example.yamicomputer.navigation.Routes
-import com.example.yamicomputer.viewmodel.SharedViewModel
+import com.example.yamicomputer.logic.SharedViewModel
 import kotlinx.coroutines.delay
 
 @Composable

@@ -8,7 +8,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.yamicomputer.navigation.NavGraph
 import com.example.yamicomputer.ui.theme.YamiComputerTheme
-import com.example.yamicomputer.viewmodel.SharedViewModel
+import com.example.yamicomputer.logic.SharedViewModel
 
 class MainActivity : ComponentActivity() {
 

@@ -1,8 +1,10 @@
 package com.example.yamicomputer.screen
 
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
@@ -27,8 +28,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -42,19 +41,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.yamicomputer.data.ComplaintData
-import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.DealerNames
-import com.example.yamicomputer.data.ProfileActions
-import com.example.yamicomputer.data.stringToComplaintStatus
+import com.example.yamicomputer.data.ProductData
+import com.example.yamicomputer.data.ProductStatus
 import com.example.yamicomputer.data.stringToDealerName
+import com.example.yamicomputer.data.stringToProductStatus
 import com.example.yamicomputer.ui.theme.BrightRed
 import com.example.yamicomputer.logic.SharedViewModel
 import com.google.firebase.Firebase
@@ -65,15 +62,14 @@ import com.google.firebase.database.database
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddComplaintScreen(
+fun AddProductScreen(
     navController: NavController,
     sharedViewModel: SharedViewModel
 ) {
 
     val context = LocalContext.current
 
-    val id by sharedViewModel.id
-    val profileAction by sharedViewModel.profileAction
+    val id by sharedViewModel.productID
 
     /** we are checking if id is empty or not, here if the id is empty
     then this screen will be used to create new Complaint and
@@ -85,54 +81,54 @@ fun AddComplaintScreen(
 
     idNotEmpty = id.isNotEmpty()
 
-    val complaintData by sharedViewModel.complaintData
+    val productData by sharedViewModel.productData
 
     var name by rememberSaveable {
-        mutableStateOf(complaintData.name)
+        mutableStateOf(productData.name)
     }
 
     var mobileNo by rememberSaveable {
-        mutableStateOf(complaintData.mobileNo)
+        mutableStateOf(productData.mobileNo)
     }
 
     var date by rememberSaveable {
-        mutableStateOf(complaintData.date)
+        mutableStateOf(productData.date)
     }
 
-    var item by rememberSaveable {
-        mutableStateOf(complaintData.item)
+    var product by rememberSaveable {
+        mutableStateOf(productData.product)
     }
 
-    var problem by rememberSaveable {
-        mutableStateOf(complaintData.problem)
+    var description by rememberSaveable {
+        mutableStateOf(productData.description)
     }
 
-    var complaintStatus by rememberSaveable {
-        mutableStateOf(complaintData.status.stringToComplaintStatus())
+    var productStatus by rememberSaveable {
+        mutableStateOf(productData.status.stringToProductStatus())
     }
 
-    var complaintStatusClicked by rememberSaveable {
+    var productStatusClicked by rememberSaveable {
         mutableStateOf(false)
     }
 
-    var charge by rememberSaveable {
-        mutableStateOf(complaintData.charge)
+    var price by rememberSaveable {
+        mutableStateOf(productData.price)
     }
 
     var photo by rememberSaveable {
-        mutableStateOf(complaintData.photo)
+        mutableStateOf(productData.photo)
     }
 
     var collectorName by rememberSaveable {
-        mutableStateOf(complaintData.collectorName)
+        mutableStateOf(productData.collectorName)
     }
 
     var collectionDate by rememberSaveable {
-        mutableStateOf(complaintData.collectionDate)
+        mutableStateOf(productData.collectionDate)
     }
 
     var dealerName by rememberSaveable {
-        mutableStateOf(complaintData.dealerName.stringToDealerName())
+        mutableStateOf(productData.dealerName.stringToDealerName())
     }
 
     var dealerNameClicked by rememberSaveable {
@@ -151,7 +147,7 @@ fun AddComplaintScreen(
     // and database reference.
 //    val firebaseDatabase = FirebaseDatabase.database
     val database = Firebase.database
-    val databaseReference = database.getReference("customer-complaints")
+    val databaseReference = database.getReference("all-products")
 
     val scrollState = rememberScrollState()
     Scaffold(
@@ -218,93 +214,89 @@ fun AddComplaintScreen(
 
             // item
             RegularTextField(
-                textFieldName = "Item",
-                value = item,
+                textFieldName = "Product",
+                value = product,
                 onTextChange = {
-                    item = it
+                    product = it
                 }
             )
 
             // problem
             RegularTextField(
-                textFieldName = "Problem",
-                value = problem,
+                textFieldName = "Description",
+                value = description,
                 onTextChange = {
-                    problem = it
+                    description = it
                 }
             )
 
-            if (idNotEmpty) {
-                // complaint Status
-                RegularTextField(
-                    textFieldName = "Complaint Status",
-                    value = complaintStatus.name,
-                    onTextChange = {
 
-                    },
-                    enable = false,
-                    onClick = {
-                        complaintStatusClicked = !complaintStatusClicked
-                    }
-                )
-                Column(
-                    modifier = Modifier
-                        .padding(horizontal = 30.dp)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
-                ) {
+            // complaint Status
+            RegularTextField(
+                textFieldName = "Product Status",
+                value = productStatus.name,
+                onTextChange = {
 
-                    DropdownMenu(
-                        modifier = Modifier.fillMaxWidth(0.7f),
-                        expanded = complaintStatusClicked,
-                        onDismissRequest = {
-                            complaintStatusClicked = false
-                        }) {
-                        ComplaintStatus.entries.forEach {
-                            DropdownMenuItem(
-                                text = {
-                                    Text(text = it.name, color = Color.Black)
-                                },
-                                onClick = {
-                                    complaintStatus = it
-                                    complaintStatusClicked = false
-                                },
-                            )
-                        }
-                    }
+                },
+                enable = false,
+                onClick = {
+                    productStatusClicked = !productStatusClicked
                 }
+            )
+            Column(
+                modifier = Modifier
+                    .padding(horizontal = 30.dp)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
 
-                // charge
-                RegularTextField(
-                    textFieldName = "Charge",
-                    value = charge,
-                    onTextChange = {
-                        charge = it
+                DropdownMenu(
+                    modifier = Modifier.fillMaxWidth(0.7f),
+                    expanded = productStatusClicked,
+                    onDismissRequest = {
+                        productStatusClicked = false
+                    }) {
+                    ProductStatus.entries.forEach {
+                        DropdownMenuItem(
+                            text = {
+                                Text(text = it.name, color = Color.Black)
+                            },
+                            onClick = {
+                                productStatus = it
+                                productStatusClicked = false
+                            },
+                        )
                     }
-                )
-
-                // if this screen is used as outwards screen
-                if (profileAction == ProfileActions.OUTWARD_COMPLAINT) {
-                    // collector name
-                    RegularTextField(
-                        textFieldName = "Collector Name",
-                        value = collectorName,
-                        onTextChange = {
-                            collectorName = it
-                        }
-                    )
-
-                    // collection date
-                    RegularTextField(
-                        textFieldName = "Collection Date",
-                        value = collectionDate,
-                        onTextChange = {
-                            collectionDate = it
-                        }
-                    )
                 }
             }
+
+            // charge
+            RegularTextField(
+                textFieldName = "Prize",
+                value = price,
+                onTextChange = {
+                    price = it
+                }
+            )
+
+            // collector name
+            RegularTextField(
+                textFieldName = "Collector Name",
+                value = collectorName,
+                onTextChange = {
+                    collectorName = it
+                }
+            )
+
+            // collection date
+            RegularTextField(
+                textFieldName = "Collection Date",
+                value = collectionDate,
+                onTextChange = {
+                    collectionDate = it
+                }
+            )
 
             // Dealer Name
             RegularTextField(
@@ -361,7 +353,7 @@ fun AddComplaintScreen(
                 shape = RoundedCornerShape(10.dp),
             ) {
                 Text(
-                    text = "${if (idNotEmpty) "Update" else "Add"} Complaint",
+                    text = "${if (idNotEmpty) "Update" else "Add"} Product",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
@@ -375,7 +367,7 @@ fun AddComplaintScreen(
                         .clickable {
                             deleteClicked = true
                         },
-                    text = "Delete Complaint",
+                    text = "Delete Product",
                     color = BrightRed,
                     fontSize = 16.sp,
                     textDecoration = TextDecoration.Underline
@@ -407,9 +399,9 @@ fun AddComplaintScreen(
                 }
             },
             title = {
-                Text(text = "Delete the Complaint!", fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                Text(text = "Delete the Product!", fontWeight = FontWeight.Bold, fontSize = 20.sp)
             }, text = {
-                Text(text = "Are you sure to delete the complaint? Once deleted the action can not be reversed, resulting permanent deletion of the complaint. \nTo delete click confirm")
+                Text(text = "Are you sure to delete the Product? Once deleted the action can not be reversed, resulting permanent deletion of the Product. \nTo delete click confirm")
             }
         )
     }
@@ -419,15 +411,15 @@ fun AddComplaintScreen(
             val newRef = if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
 
             // on below line we are adding data.
-            val complaintDataEdited = ComplaintData(
+            val complaintDataEdited = ProductData(
                 name = name,
                 date = date,
-                item = item,
-                problem = problem,
-                charge = charge,
+                product = product,
+                description = description,
+                price = price,
                 photo = photo,
-                status = complaintStatus.name,
-                complaintId = newRef.key ?: "error while adding complaint!",
+                status = productStatus.name,
+                productID = newRef.key ?: "error while adding product!",
                 mobileNo = mobileNo,
                 collectorName = collectorName,
                 collectionDate = collectionDate,
@@ -441,16 +433,16 @@ fun AddComplaintScreen(
                     // Data has changed
                     Toast.makeText(
                         context,
-                        "Complaint ${if (idNotEmpty) "Updated" else "Created"}!",
+                        "Product ${if (idNotEmpty) "Updated" else "Created"}!",
                         Toast.LENGTH_SHORT
                     ).show()
 
                     if (!idNotEmpty) {
                         name = ""
                         date = ""
-                        item = ""
-                        problem = ""
-                        charge = ""
+                        product = ""
+                        description = ""
+                        price = ""
                         photo = ""
                     }
 
@@ -475,67 +467,15 @@ fun AddComplaintScreen(
 }
 
 @Composable
-fun RegularTextField(
-    textFieldName: String,
-    value: String,
-    onTextChange: (String) -> Unit,
-    enable: Boolean = true,
-    onClick: () -> Unit = {},
-    keyboardType: KeyboardType = KeyboardType.Text
-) {
-    Column(
-        modifier = Modifier
-            .padding(horizontal = 30.dp, vertical = 10.dp)
-            .fillMaxWidth()
-            .clickEnableOnCondition(condition = !enable, clickable = {
-                onClick()
-            }),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.Start
+fun ImagePicker(onImageSelected: (Uri) -> Unit) {
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? -> uri?.let { onImageSelected(it) } }
+    )
+
+    Button(
+        onClick = { launcher.launch("image/*") }
     ) {
-        Text(
-            modifier = Modifier.padding(top = 5.dp),
-            text = textFieldName,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Medium
-        )
-        TextField(
-            modifier = Modifier
-                .background(shape = RoundedCornerShape(10.dp), color = Color.Gray)
-                .fillMaxWidth(),
-            value = value,
-            onValueChange = {
-                onTextChange(it)
-            },
-            textStyle = TextStyle(
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp
-            ),
-            colors = TextFieldDefaults.colors(
-                cursorColor = Color.Black,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-                disabledIndicatorColor = Color.Transparent,
-            ),
-            enabled = enable,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-
-            )
+        Text("Select Image")
     }
-}
-
-fun Modifier.clickEnableOnCondition(
-    condition: Boolean,
-    clickable: () -> Unit
-): Modifier {
-
-    if (condition) {
-        return this.clickable {
-            clickable()
-        }
-    }
-
-    return this
-
-
 }

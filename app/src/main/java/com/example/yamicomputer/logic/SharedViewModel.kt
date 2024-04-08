@@ -1,4 +1,4 @@
-package com.example.yamicomputer.viewmodel
+package com.example.yamicomputer.logic
 
 import androidx.annotation.Keep
 import androidx.compose.runtime.MutableState
@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
+import com.example.yamicomputer.data.ProductActions
+import com.example.yamicomputer.data.ProductData
 import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.data.ProfileData
 import com.google.firebase.Firebase
@@ -22,10 +24,14 @@ import kotlinx.coroutines.delay
 class SharedViewModel : ViewModel() {
 
     var id: MutableState<String> = mutableStateOf("")
+    var productID: MutableState<String> = mutableStateOf("")
+    var productData: MutableState<ProductData> = mutableStateOf(ProductData())
+
     var complaintData: MutableState<ComplaintData> = mutableStateOf(ComplaintData())
     var compliantStatus: MutableState<ComplaintStatus> = mutableStateOf(ComplaintStatus.NOTHING)
 
     var deleteCompliant: MutableState<Boolean> = mutableStateOf(false)
+    var deleteProduct: MutableState<Boolean> = mutableStateOf(false)
 
     // for firebase auth and callback
     private val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
@@ -71,6 +77,7 @@ class SharedViewModel : ViewModel() {
 
     /** This variable stores the enum value for use of ProfileCreateScreen as update profile or create profile **/
     var profileAction: MutableState<ProfileActions> = mutableStateOf(ProfileActions.CREATE_PROFILE)
+    var productAction: MutableState<ProductActions> = mutableStateOf(ProductActions.CREATE)
 
 
 }
