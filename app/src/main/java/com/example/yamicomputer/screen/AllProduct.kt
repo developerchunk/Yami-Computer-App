@@ -17,6 +17,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -29,7 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,11 +45,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.yamicomputer.data.ProductActions
 import com.example.yamicomputer.data.ProductData
+import com.example.yamicomputer.data.ProductStatus
+import com.example.yamicomputer.logic.SharedViewModel
 import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.ui.theme.DarkBlue
 import com.example.yamicomputer.ui.theme.Purple40
 import com.example.yamicomputer.ui.theme.Purple80
-import com.example.yamicomputer.logic.SharedViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -126,34 +131,49 @@ fun AllProductsScreen(
         })
     }
 
+
+    var selectedProductStatus by remember {
+        mutableStateOf(ProductStatus.NOTHING)
+    }
+
+    var selectedProductStatusExpanded by remember {
+        mutableStateOf(false)
+    }
+
     Scaffold(
         topBar = {
-            TopAppBar(title = {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
+            TopAppBar(
+                title = {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
 
-                    IconButton(onClick = {
-                        navController.popBackStack()
-                    }) {
+                        IconButton(onClick = {
+                            navController.popBackStack()
+                        }) {
 
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                            contentDescription = "back",
-                            tint = Color.White,
-                            modifier = Modifier.size(28.dp)
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "back",
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+
+                        }
+                        Text(
+                            modifier = Modifier.padding(start = 15.dp),
+                            text = "All Products",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
                         )
 
                     }
-                    Text(
-                        modifier = Modifier.padding(start = 15.dp),
-                        text = "All Products",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Color.White
-                    )
 
                 }
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkBlue))
@@ -184,10 +204,36 @@ fun AllProductsScreen(
                 .fillMaxSize(),
         ) {
 
+            Column {
+                Text(
+                    text = "Sort By: ${selectedProductStatus.name}",
+                    modifier = Modifier.clickable {
+                        selectedProductStatusExpanded = true
+                    }.padding(top = 10.dp, start = 15.dp),
+                    fontSize = 20.sp,
+                    color = Color.Black
+                )
+                DropdownMenu(expanded = selectedProductStatusExpanded, onDismissRequest = {
+                    selectedProductStatusExpanded = false
+                }) {
+
+                    ProductStatus.entries.forEach {
+                        DropdownMenuItem(
+                            text = { Text(text = it.name) },
+                            onClick = {
+                                selectedProductStatus = it
+                                selectedProductStatusExpanded = false
+                            })
+                    }
+
+                }
+            }
+
             ProductListUI(
                 list = productDataList,
                 sharedViewModel = sharedViewModel,
                 navController = navController,
+                productStatus = selectedProductStatus
             )
 
         }
@@ -200,11 +246,12 @@ fun ProductListUI(
     list: SnapshotStateList<ProductData>,
     sharedViewModel: SharedViewModel,
     navController: NavController,
+    productStatus: ProductStatus
 ) {
 
     LazyColumn {
 
-        items(list.reversed()) {
+        items(list.reversed().filterProductStatus(productStatus)) {
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -222,16 +269,22 @@ fun ProductListUI(
                         navController.navigate(Routes.AddProductScreen.id)
                     }) {
 
-                    Text(text = it.name)
-                    Text(text = it.date)
-                    Text(text = it.product)
-                    Text(text = it.description)
-                    Text(text = it.status)
+                    Text(text = "Name: ${it.name}")
+                    Text(text = "Date: ${it.date}")
+                    Text(text = "Product: ${it.product}")
+                    Text(text = "Description: ${it.description}")
+                    Text(text = "Status: ${it.status}")
 
                 }
 
             }
         }
     }
+
+}
+
+fun List<ProductData>.filterProductStatus(productStatus: ProductStatus): List<ProductData> {
+
+    return if (productStatus != ProductStatus.NOTHING) this.filter { it.status == productStatus.name } else this
 
 }

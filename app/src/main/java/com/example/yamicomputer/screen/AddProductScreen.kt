@@ -1,10 +1,12 @@
 package com.example.yamicomputer.screen
 
+import android.Manifest
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -32,6 +34,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,20 +50,24 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberImagePainter
 import com.example.yamicomputer.data.DealerNames
 import com.example.yamicomputer.data.ProductData
 import com.example.yamicomputer.data.ProductStatus
 import com.example.yamicomputer.data.stringToDealerName
 import com.example.yamicomputer.data.stringToProductStatus
-import com.example.yamicomputer.ui.theme.BrightRed
 import com.example.yamicomputer.logic.SharedViewModel
+import com.example.yamicomputer.ui.theme.BrightRed
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun AddProductScreen(
     navController: NavController,
@@ -68,6 +75,38 @@ fun AddProductScreen(
 ) {
 
     val context = LocalContext.current
+
+    val smsPermissionState = rememberPermissionState(
+        permission = Manifest.permission.SEND_SMS
+    )
+
+    var smsPermissionClicked by remember {
+        mutableStateOf(false)
+    }
+
+    //define permission in composable fun
+    val getPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ ->
+//        if (isGranted) {
+//            //permission accepted do something
+//            Toast.makeText(context, "Permission Granted!", Toast.LENGTH_SHORT).show()
+//        } else {
+//            //permission not accepted show message
+//            Toast.makeText(context, "Permission Denied!", Toast.LENGTH_SHORT).show()
+//        }
+    }
+
+    SideEffect {
+        getPermission.launch(Manifest.permission.SEND_SMS)
+    }
+
+//    val permissionResult = (
+//        permissionState = smsPermissionState
+//    )
+    LaunchedEffect(smsPermissionState) {
+        getPermission.launch(Manifest.permission.SEND_SMS)
+    }
 
     val id by sharedViewModel.productID
 
@@ -143,6 +182,18 @@ fun AddProductScreen(
         mutableStateOf(false)
     }
 
+    var selectedImageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+
+    var imageUri by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    LaunchedEffect(key1 = Unit) {
+        imageUri = getImageUrlFromFirebaseStorage("images/$photo")
+    }
+
     // on below line creating variable for freebase database
     // and database reference.
 //    val firebaseDatabase = FirebaseDatabase.database
@@ -183,6 +234,32 @@ fun AddProductScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+
+            if (!smsPermissionState.status.isGranted) {
+                Button(onClick = {
+                    smsPermissionClicked = true
+                }) {
+                    Text(text = "Request SMS Permission")
+                }
+            }
+
+            if (!idNotEmpty) {
+                ImagePickerScreen(selectedImageUriListener = {
+                    selectedImageUri = it
+                })
+            } else {
+
+                imageUri?.let { uri ->
+                    val painter = rememberImagePainter(uri)
+                    Image(
+                        painter = painter,
+                        contentDescription = "Selected Image",
+                        modifier = Modifier
+                            .size(200.dp)
+                            .padding(8.dp)
+                    )
+                }
+            }
 
             // Name
             RegularTextField(
@@ -408,62 +485,78 @@ fun AddProductScreen(
 
     if (addComplaintClicked) {
         LaunchedEffect(key1 = Unit) {
-            val newRef = if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
 
-            // on below line we are adding data.
-            val complaintDataEdited = ProductData(
-                name = name,
-                date = date,
-                product = product,
-                description = description,
-                price = price,
-                photo = photo,
-                status = productStatus.name,
-                productID = newRef.key ?: "error while adding product!",
-                mobileNo = mobileNo,
-                collectorName = collectorName,
-                collectionDate = collectionDate,
-                dealerName = dealerName.name
-            )
+            if (smsPermissionState.status.isGranted) {
 
-            newRef.setValue(complaintDataEdited)
-            Log.d("error-firebase-database", "onCancelled:")
-            databaseReference.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    // Data has changed
-                    Toast.makeText(
-                        context,
-                        "Product ${if (idNotEmpty) "Updated" else "Created"}!",
-                        Toast.LENGTH_SHORT
-                    ).show()
 
-                    if (!idNotEmpty) {
-                        name = ""
-                        date = ""
-                        product = ""
-                        description = ""
-                        price = ""
-                        photo = ""
-                    }
+                val newRef =
+                    if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
 
-                }
+                selectedImageUri?.let {
+                    uploadPhotoToFirebase(
+                        context = context,
+                        imageUri = it,
+                        onImageUploadSuccessListener = { photoPath ->
 
-                override fun onCancelled(error: DatabaseError) {
-                    // Error occurred
-                    Toast.makeText(
-                        context,
-                        "Fail to add data $error",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                            // on below line we are adding data.
+                            val complaintDataEdited = ProductData(
+                                name = name,
+                                date = date,
+                                product = product,
+                                description = description,
+                                price = price,
+                                photo = photoPath,
+                                status = productStatus.name,
+                                productID = newRef.key ?: "error while adding product!",
+                                mobileNo = mobileNo,
+                                collectorName = collectorName,
+                                collectionDate = collectionDate,
+                                dealerName = dealerName.name
+                            )
 
-                    Log.d("error-firebase-database", "onCancelled: $error")
-                }
-            })
+                            newRef.setValue(complaintDataEdited)
+                            Log.d("error-firebase-database", "onCancelled:")
+                            databaseReference.addValueEventListener(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    // Data has changed
+                                    Toast.makeText(
+                                        context,
+                                        "Product ${if (idNotEmpty) "Updated" else "Created"}!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
 
-            addComplaintClicked = false
+                                    if (!idNotEmpty) {
+                                        name = ""
+                                        date = ""
+                                        product = ""
+                                        description = ""
+                                        price = ""
+                                        photo = ""
+                                    }
+
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {
+                                    // Error occurred
+                                    Toast.makeText(
+                                        context,
+                                        "Fail to add data $error",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    Log.d("error-firebase-database", "onCancelled: $error")
+                                }
+                            })
+
+                        }
+                    )}
+
+                addComplaintClicked = false
+            } else {
+                Toast.makeText(context, "SMS Permission not granted!", Toast.LENGTH_LONG).show()
+            }
         }
     }
-
 }
 
 @Composable

@@ -1,7 +1,15 @@
 package com.example.yamicomputer.screen
 
+import android.Manifest
+import android.content.Context
+import android.net.Uri
+import android.telephony.SmsManager
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +41,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,28 +58,69 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.rememberImagePainter
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.DealerNames
 import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.data.stringToComplaintStatus
 import com.example.yamicomputer.data.stringToDealerName
-import com.example.yamicomputer.ui.theme.BrightRed
 import com.example.yamicomputer.logic.SharedViewModel
+import com.example.yamicomputer.ui.theme.BrightRed
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
 import com.google.firebase.Firebase
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.storage
+import kotlinx.coroutines.tasks.await
 
-@OptIn(ExperimentalMaterial3Api::class)
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun AddComplaintScreen(
     navController: NavController,
-    sharedViewModel: SharedViewModel
+    sharedViewModel: SharedViewModel,
+    activity: ComponentActivity
 ) {
 
     val context = LocalContext.current
+
+    val smsPermissionState = rememberPermissionState(
+        permission = Manifest.permission.SEND_SMS
+    )
+
+    var smsPermissionClicked by remember {
+        mutableStateOf(false)
+    }
+
+    //define permission in composable fun
+    val getPermission = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { _ ->
+//        if (isGranted) {
+//            //permission accepted do something
+//            Toast.makeText(context, "Permission Granted!", Toast.LENGTH_SHORT).show()
+//        } else {
+//            //permission not accepted show message
+//            Toast.makeText(context, "Permission Denied!", Toast.LENGTH_SHORT).show()
+//        }
+    }
+
+    SideEffect {
+        getPermission.launch(Manifest.permission.SEND_SMS)
+    }
+
+//    val permissionResult = (
+//        permissionState = smsPermissionState
+//    )
+    LaunchedEffect(smsPermissionState) {
+        getPermission.launch(Manifest.permission.SEND_SMS)
+    }
 
     val id by sharedViewModel.id
     val profileAction by sharedViewModel.profileAction
@@ -147,11 +197,23 @@ fun AddComplaintScreen(
         mutableStateOf(false)
     }
 
+    var selectedImageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+
     // on below line creating variable for freebase database
     // and database reference.
 //    val firebaseDatabase = FirebaseDatabase.database
     val database = Firebase.database
     val databaseReference = database.getReference("customer-complaints")
+
+    var imageUri by remember {
+        mutableStateOf<String?>(null)
+    }
+
+    LaunchedEffect(key1 = Unit) {
+        imageUri = getImageUrlFromFirebaseStorage("images/$photo")
+    }
 
     val scrollState = rememberScrollState()
     Scaffold(
@@ -179,6 +241,8 @@ fun AddComplaintScreen(
             }, colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent))
         }
     ) { paddingValues ->
+
+
         Column(
             modifier = Modifier
                 .padding(paddingValues)
@@ -187,6 +251,32 @@ fun AddComplaintScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+
+            if (!smsPermissionState.status.isGranted) {
+                Button(onClick = {
+                    smsPermissionClicked = true
+                }) {
+                    Text(text = "Request SMS Permission")
+                }
+            }
+
+            if (!idNotEmpty) {
+                ImagePickerScreen(selectedImageUriListener = {
+                    selectedImageUri = it
+                })
+            } else {
+
+                imageUri?.let { uri ->
+                    val painter = rememberImagePainter(uri)
+                    Image(
+                        painter = painter,
+                        contentDescription = "Selected Image",
+                        modifier = Modifier
+                            .size(200.dp)
+                            .padding(8.dp)
+                    )
+                }
+            }
 
             // Name
             RegularTextField(
@@ -416,59 +506,89 @@ fun AddComplaintScreen(
 
     if (addComplaintClicked) {
         LaunchedEffect(key1 = Unit) {
-            val newRef = if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
+            if (smsPermissionState.status.isGranted) {
 
-            // on below line we are adding data.
-            val complaintDataEdited = ComplaintData(
-                name = name,
-                date = date,
-                item = item,
-                problem = problem,
-                charge = charge,
-                photo = photo,
-                status = complaintStatus.name,
-                complaintId = newRef.key ?: "error while adding complaint!",
-                mobileNo = mobileNo,
-                collectorName = collectorName,
-                collectionDate = collectionDate,
-                dealerName = dealerName.name
-            )
+                val newRef = if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
 
-            newRef.setValue(complaintDataEdited)
-            Log.d("error-firebase-database", "onCancelled:")
-            databaseReference.addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    // Data has changed
-                    Toast.makeText(
-                        context,
-                        "Complaint ${if (idNotEmpty) "Updated" else "Created"}!",
-                        Toast.LENGTH_SHORT
-                    ).show()
+                selectedImageUri?.let {
+                    uploadPhotoToFirebase(
+                        context = context,
+                        imageUri = it,
+                        onImageUploadSuccessListener = { photoPath ->
 
-                    if (!idNotEmpty) {
-                        name = ""
-                        date = ""
-                        item = ""
-                        problem = ""
-                        charge = ""
-                        photo = ""
-                    }
+                            // on below line we are adding data.
+                            val complaintDataEdited = ComplaintData(
+                                name = name,
+                                date = date,
+                                item = item,
+                                problem = problem,
+                                charge = charge,
+                                photo = photoPath,
+                                status = complaintStatus.name,
+                                complaintId = newRef.key ?: "error while adding complaint!",
+                                mobileNo = mobileNo,
+                                collectorName = collectorName,
+                                collectionDate = collectionDate,
+                                dealerName = dealerName.name
+                            )
 
+                            newRef.setValue(complaintDataEdited)
+                            Log.d("error-firebase-database", "onCancelled:")
+
+                            databaseReference.addValueEventListener(object : ValueEventListener {
+                                override fun onDataChange(snapshot: DataSnapshot) {
+                                    // Data has changed
+                                    Toast.makeText(
+                                        context,
+                                        "Complaint ${if (idNotEmpty) "Updated" else "Created"}!",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    // on below line initializing sms manager.
+                                    val smsManager: SmsManager =
+                                        context.getSystemService(SmsManager::class.java)
+
+                                    // sending the message
+                                    if (mobileNo.isNotEmpty()) {
+                                        smsManager.sendTextMessage(
+                                            mobileNo,
+                                            null,
+                                            "Hello $name, Welcome to YAMI Computers\nYour item: $item which had the problem: $problem is now in the ${complaintStatus.name} stage, we will update you if any changes happens in future",
+                                            null,
+                                            null
+                                        )
+                                    }
+
+                                    if (!idNotEmpty) {
+                                        name = ""
+                                        date = ""
+                                        item = ""
+                                        problem = ""
+                                        charge = ""
+                                        photo = ""
+                                    }
+
+                                }
+
+                                override fun onCancelled(error: DatabaseError) {
+                                    // Error occurred
+                                    Toast.makeText(
+                                        context,
+                                        "Fail to add data $error",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    Log.d("error-firebase-database", "onCancelled: $error")
+                                }
+                            })
+
+                            addComplaintClicked = false
+
+                        })
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    // Error occurred
-                    Toast.makeText(
-                        context,
-                        "Fail to add data $error",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                    Log.d("error-firebase-database", "onCancelled: $error")
-                }
-            })
-
-            addComplaintClicked = false
+            } else {
+                Toast.makeText(context, "SMS Permission not granted!", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -537,5 +657,83 @@ fun Modifier.clickEnableOnCondition(
 
     return this
 
+}
 
+@Composable
+fun ImagePickerScreen(
+    selectedImageUriListener: (Uri) -> Unit
+) {
+    var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
+    // Activity result launcher for picking images
+    val pickImage =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri: Uri? ->
+            uri?.let {
+                selectedImageUri = uri
+            }
+        }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Button(onClick = {
+            // Launch image picker
+            pickImage.launch("image/*")
+        }) {
+            Text("Select Image")
+        }
+
+        selectedImageUri?.let { uri ->
+            val painter = rememberImagePainter(uri)
+            Image(
+                painter = painter,
+                contentDescription = "Selected Image",
+                modifier = Modifier
+                    .size(200.dp)
+                    .padding(8.dp)
+            )
+            selectedImageUriListener(uri)
+        }
+    }
+}
+
+fun uploadPhotoToFirebase(
+    context: Context,
+    imageUri: Uri,
+    onImageUploadSuccessListener: (String) -> Unit
+) {
+    val storage = Firebase.storage
+    val storageRef = storage.reference
+    val imageName = "${System.currentTimeMillis()}_${imageUri.lastPathSegment}"
+    val imageRef = storageRef.child("images/$imageName")
+
+    imageRef.putFile(imageUri)
+        .addOnSuccessListener { _ ->
+            // Image uploaded successfully
+            onImageUploadSuccessListener(imageName)
+            Toast.makeText(context, "Image uploaded successfully", Toast.LENGTH_SHORT).show()
+        }
+        .addOnFailureListener { exception ->
+            // Handle unsuccessful uploads
+            Toast.makeText(
+                context,
+                "Failed to upload image: ${exception.message}",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+}
+
+suspend fun getImageUrlFromFirebaseStorage(imagePath: String): String? {
+    return try {
+        val storageRef = FirebaseStorage.getInstance().reference.child(imagePath)
+        storageRef.downloadUrl.await().toString()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
 }

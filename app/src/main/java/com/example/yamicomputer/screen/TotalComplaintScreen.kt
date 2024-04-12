@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,13 +23,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -41,11 +46,11 @@ import androidx.navigation.NavController
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.ProfileActions
+import com.example.yamicomputer.logic.SharedViewModel
 import com.example.yamicomputer.navigation.Routes.AddComplaintScreen
 import com.example.yamicomputer.ui.theme.DarkBlue
 import com.example.yamicomputer.ui.theme.Purple40
 import com.example.yamicomputer.ui.theme.Purple80
-import com.example.yamicomputer.logic.SharedViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.database.ChildEventListener
 import com.google.firebase.database.DataSnapshot
@@ -187,7 +192,13 @@ fun TotalComplaintScreen(
                 .fillMaxSize(),
         ) {
 
-            ComplaintListUI(complaintDataList, complaintStatus, sharedViewModel, navController, profileActions = if (complaintStatus == ComplaintStatus.COMPLETE || complaintStatus == ComplaintStatus.OUTWARDS) ProfileActions.OUTWARD_COMPLAINT else ProfileActions.UPDATE_PROFILE)
+            ComplaintListUI(
+                complaintDataList,
+                complaintStatus,
+                sharedViewModel,
+                navController,
+                profileActions = if (complaintStatus == ComplaintStatus.COMPLETE || complaintStatus == ComplaintStatus.OUTWARDS) ProfileActions.OUTWARD_COMPLAINT else ProfileActions.UPDATE_PROFILE
+            )
 
         }
     }
@@ -202,6 +213,23 @@ fun ComplaintListUI(
     navController: NavController,
     profileActions: ProfileActions = ProfileActions.UPDATE_PROFILE
 ) {
+
+    var search by rememberSaveable {
+        mutableStateOf("")
+    }
+
+    Row {
+        TextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = search, onValueChange = { s ->
+                search = s
+            }, trailingIcon = {
+                Icon(
+                    imageVector = Icons.Rounded.Search, contentDescription = "search"
+                )
+            }
+        )
+    }
 
     LazyColumn {
 
@@ -222,11 +250,11 @@ fun ComplaintListUI(
                         navController.navigate(AddComplaintScreen.id)
                     }) {
 
-                    Text(text = it.name)
-                    Text(text = it.date)
-                    Text(text = it.item)
-                    Text(text = it.problem)
-                    Text(text = it.status)
+                    Text(text = "Name: ${it.name}")
+                    Text(text = "Date: ${it.date}")
+                    Text(text = "Item: ${it.item}")
+                    Text(text = "Problem: ${it.problem}")
+                    Text(text = "Status: ${it.status}")
 
                 }
 
@@ -238,6 +266,6 @@ fun ComplaintListUI(
 
 fun List<ComplaintData>.filterComplaintStatus(complaintStatus: ComplaintStatus): List<ComplaintData> {
 
-    return if (complaintStatus != ComplaintStatus.NOTHING) this.filter { it.status == complaintStatus.name } else this
+    return if (complaintStatus != ComplaintStatus.NOTHING) this.filter { it.status == complaintStatus.name } else this.filterNot { it.status == ComplaintStatus.COMPLETE.name || it.status == ComplaintStatus.OUTWARDS.name }
 
 }

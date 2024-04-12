@@ -1,5 +1,6 @@
 package com.example.yamicomputer.logic
 
+import android.net.Uri
 import androidx.annotation.Keep
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
@@ -18,7 +19,9 @@ import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.ValueEventListener
 import com.google.firebase.database.database
 import com.google.firebase.database.getValue
+import com.google.firebase.storage.storage
 import kotlinx.coroutines.delay
+import java.util.UUID
 
 @Keep
 class SharedViewModel : ViewModel() {
@@ -80,4 +83,29 @@ class SharedViewModel : ViewModel() {
     var productAction: MutableState<ProductActions> = mutableStateOf(ProductActions.CREATE)
 
 
+    // firebase
+    private val storage = Firebase.storage
+    private val storageRef = storage.reference
+
+    fun uploadPhoto(imageUri: Uri, onSuccess: (String) -> Unit, onFailure: (Exception) -> Unit) {
+        val imageName = "${UUID.randomUUID()}.jpg"
+        val imageRef = storageRef.child("images/$imageName")
+
+        val uploadTask = imageRef.putFile(imageUri)
+        uploadTask.continueWithTask { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let {
+                    throw it
+                }
+            }
+            imageRef.downloadUrl
+        }.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                val downloadUri = task.result
+                onSuccess(downloadUri.toString())
+            } else {
+                onFailure(task.exception ?: Exception("Unknown error occurred"))
+            }
+        }
+    }
 }

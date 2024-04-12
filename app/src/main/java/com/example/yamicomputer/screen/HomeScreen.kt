@@ -38,10 +38,10 @@ import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.ProductActions
 import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.data.ProfileData
+import com.example.yamicomputer.logic.SharedViewModel
 import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.ui.theme.DarkBlue
 import com.example.yamicomputer.ui.theme.Purple80
-import com.example.yamicomputer.logic.SharedViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -184,7 +184,7 @@ fun HomeScreen(
 
                     Row(modifier = Modifier.padding(20.dp)) {
 
-                        Text(text = "Total Complaints: ${complaintDataList.size}")
+                        Text(text = "Total Complaints: ${complaintDataList.filterNot { it.status == ComplaintStatus.COMPLETE.name || it.status == ComplaintStatus.OUTWARDS.name }.size}")
 
                     }
 

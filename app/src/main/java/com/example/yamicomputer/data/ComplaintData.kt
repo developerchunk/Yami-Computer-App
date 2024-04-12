@@ -28,8 +28,21 @@ enum class ComplaintStatus {
 
 enum class DealerNames {
     SITARAM,
-    SUB
+    SUBHASH
 }
+
+val listOfItems = mutableListOf(
+    "Laptop with Adapter",
+    "Laptop with Adapter with Bag",
+    "CPU",
+    "LCD",
+    "Printer",
+    "Printer with Printer Cable",
+    "Keyboard",
+    "Mouse",
+    "Hard Disk",
+    "External Hard Disk",
+)
 
 fun String.stringToComplaintStatus(): ComplaintStatus {
     return when (this) {
@@ -45,7 +58,7 @@ fun String.stringToComplaintStatus(): ComplaintStatus {
 fun String.stringToDealerName(): DealerNames {
     return when (this) {
         DealerNames.SITARAM.name -> DealerNames.SITARAM
-        DealerNames.SUB.name -> DealerNames.SUB
+        DealerNames.SUBHASH.name -> DealerNames.SUBHASH
         else -> {DealerNames.SITARAM}
     }
 }

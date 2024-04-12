@@ -1,7 +1,11 @@
 package com.example.yamicomputer.logic
 
 import android.net.Uri
+import androidx.lifecycle.ViewModel
+import com.google.firebase.Firebase
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.storage
+import java.util.UUID
 
 object FirebaseStorageManager {
 
@@ -31,4 +35,8 @@ object FirebaseStorageManager {
             onFailure(e)
         }
     }
+}
+
+class UploadPhotoViewModel : ViewModel() {
+
 }

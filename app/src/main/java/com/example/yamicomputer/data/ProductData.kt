@@ -28,7 +28,9 @@ data class ProductData(
 
 enum class ProductStatus {
     BUY,
-    SELL
+    SELL,
+    NEW_SELL,
+    NOTHING
 }
 
 //fun String.stringToComplaintStatus(): ComplaintStatus {
@@ -46,6 +48,8 @@ fun String.stringToProductStatus(): ProductStatus {
     return when (this) {
         ProductStatus.BUY.name -> ProductStatus.BUY
         ProductStatus.SELL.name -> ProductStatus.SELL
+        ProductStatus.NEW_SELL.name -> ProductStatus.NEW_SELL
+        ProductStatus.NOTHING.name -> ProductStatus.NOTHING
         else -> {
             ProductStatus.BUY
         }
