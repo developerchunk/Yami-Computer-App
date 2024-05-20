@@ -6,7 +6,6 @@ import android.net.Uri
 import android.telephony.SmsManager
 import android.util.Log
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -28,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
@@ -53,6 +53,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -62,7 +63,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.rememberImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.DealerNames
@@ -71,6 +72,7 @@ import com.example.yamicomputer.data.stringToComplaintStatus
 import com.example.yamicomputer.data.stringToDealerName
 import com.example.yamicomputer.logic.SharedViewModel
 import com.example.yamicomputer.ui.theme.BrightRed
+import com.example.yamicomputer.ui.theme.UIBlue
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -90,8 +92,7 @@ import java.util.Locale
 @Composable
 fun AddComplaintScreen(
     navController: NavController,
-    sharedViewModel: SharedViewModel,
-    activity: ComponentActivity
+    sharedViewModel: SharedViewModel
 ) {
 
     val context = LocalContext.current
@@ -267,7 +268,7 @@ fun AddComplaintScreen(
             if (!smsPermissionState.status.isGranted) {
                 Button(onClick = {
                     smsPermissionClicked = true
-                }) {
+                }, colors = ButtonDefaults.buttonColors(UIBlue)) {
                     Text(text = "Request SMS Permission")
                 }
             }
@@ -279,7 +280,7 @@ fun AddComplaintScreen(
             } else {
 
                 imageUri?.let { uri ->
-                    val painter = rememberImagePainter(uri)
+                    val painter = rememberAsyncImagePainter(uri)
                     Image(
                         painter = painter,
                         contentDescription = "Selected Image",
@@ -472,6 +473,7 @@ fun AddComplaintScreen(
                 onClick = {
                     addComplaintClicked = true
                 },
+                colors = ButtonDefaults.buttonColors(UIBlue),
                 shape = RoundedCornerShape(10.dp),
             ) {
                 Text(
@@ -719,8 +721,9 @@ fun RegularTextField(
         )
         TextField(
             modifier = Modifier
-                .background(shape = RoundedCornerShape(10.dp), color = Color.Gray)
-                .fillMaxWidth(),
+                .background(shape = RoundedCornerShape(20.dp), color = Color.Gray)
+                .fillMaxWidth()
+                .clip(shape = RoundedCornerShape(20.dp)),
             value = value,
             onValueChange = {
                 onTextChange(it)
@@ -762,7 +765,6 @@ fun ImagePickerScreen(
     selectedImageUriListener: (Uri) -> Unit
 ) {
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    val context = LocalContext.current
 
     // Activity result launcher for picking images
     val pickImage =
@@ -782,12 +784,12 @@ fun ImagePickerScreen(
         Button(onClick = {
             // Launch image picker
             pickImage.launch("image/*")
-        }) {
+        }, colors = ButtonDefaults.buttonColors(UIBlue)) {
             Text("Select Image")
         }
 
         selectedImageUri?.let { uri ->
-            val painter = rememberImagePainter(uri)
+            val painter = rememberAsyncImagePainter(uri)
             Image(
                 painter = painter,
                 contentDescription = "Selected Image",

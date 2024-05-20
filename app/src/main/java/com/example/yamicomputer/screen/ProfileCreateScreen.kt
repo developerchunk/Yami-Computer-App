@@ -6,8 +6,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,6 +38,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
@@ -45,9 +49,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.data.ProfileData
+import com.example.yamicomputer.logic.SharedViewModel
 import com.example.yamicomputer.navigation.Routes
 import com.example.yamicomputer.ui.theme.DarkBlue
-import com.example.yamicomputer.logic.SharedViewModel
+import com.example.yamicomputer.ui.theme.UIBlue
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -70,7 +75,7 @@ fun ProfileCreateScreen(
     // for firebase auth and callback
     val mAuth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    val userId: FirebaseUser = mAuth.currentUser!!
+    val userId: FirebaseUser? = mAuth.currentUser
 
     // on below line creating variable for freebase database
     // and database reference.
@@ -97,26 +102,31 @@ fun ProfileCreateScreen(
 
     LaunchedEffect(key1 = Unit) {
         if (!isProfileNotCreated) {
-            databaseReference.child(userId.uid).addValueEventListener(object : ValueEventListener {
-                override fun onDataChange(dataSnapshot: DataSnapshot) {
-                    // Get the data as a User object
-                    val data = dataSnapshot.getValue<ProfileData>()!!
-                    name = data.name
-                    address = data.address
-                    city = data.city
-                }
+            if (userId != null) {
+                databaseReference.child(userId.uid).addValueEventListener(object : ValueEventListener {
+                    override fun onDataChange(dataSnapshot: DataSnapshot) {
+                        // Get the data as a User object
+                        val data = dataSnapshot.getValue<ProfileData>()!!
+                        name = data.name
+                        address = data.address
+                        city = data.city
+                    }
 
-                override fun onCancelled(error: DatabaseError) {
-                    // Failed to read value
-                    Toast.makeText(
-                        context,
-                        "Error while fetching data!, please try again later.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            })
+                    override fun onCancelled(error: DatabaseError) {
+                        // Failed to read value
+                        Toast.makeText(
+                            context,
+                            "Error while fetching data!, please try again later.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                })
+            }
         }
     }
+
+    val textSpacer = 7.dp
+
     val scrollState = rememberScrollState()
     Scaffold(
         topBar = {
@@ -157,7 +167,10 @@ fun ProfileCreateScreen(
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier.padding(paddingValues).fillMaxSize().verticalScroll(scrollState),
+            modifier = Modifier
+                .padding(paddingValues)
+                .fillMaxSize()
+                .verticalScroll(scrollState),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -165,7 +178,7 @@ fun ProfileCreateScreen(
             // Name
             Column(
                 modifier = Modifier
-                    .padding(horizontal = 30.dp, vertical = 10.dp)
+                    .padding(horizontal = 30.dp, vertical = 15.dp)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
@@ -176,10 +189,12 @@ fun ProfileCreateScreen(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
+                Spacer(modifier = Modifier.height(textSpacer))
                 TextField(
                     modifier = Modifier
-                        .background(shape = RoundedCornerShape(10.dp), color = Color.Gray)
-                        .fillMaxWidth(),
+                        .background(shape = RoundedCornerShape(20.dp), color = Color.Gray)
+                        .fillMaxWidth()
+                        .clip(shape = RoundedCornerShape(20.dp)),
                     value = name,
                     onValueChange = {
                         name = it
@@ -201,7 +216,7 @@ fun ProfileCreateScreen(
             // Address
             Column(
                 modifier = Modifier
-                    .padding(horizontal = 30.dp, vertical = 10.dp)
+                    .padding(horizontal = 30.dp, vertical = 15.dp)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
@@ -212,10 +227,12 @@ fun ProfileCreateScreen(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
+                Spacer(modifier = Modifier.height(textSpacer))
                 TextField(
                     modifier = Modifier
-                        .background(shape = RoundedCornerShape(10.dp), color = Color.Gray)
-                        .fillMaxWidth(),
+                        .background(shape = RoundedCornerShape(20.dp), color = Color.Gray)
+                        .fillMaxWidth()
+                        .clip(shape = RoundedCornerShape(20.dp)),
                     value = address,
                     onValueChange = {
                         address = it
@@ -237,7 +254,7 @@ fun ProfileCreateScreen(
             // City
             Column(
                 modifier = Modifier
-                    .padding(horizontal = 30.dp, vertical = 10.dp)
+                    .padding(horizontal = 30.dp, vertical = 15.dp)
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
@@ -248,10 +265,12 @@ fun ProfileCreateScreen(
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 )
+                Spacer(modifier = Modifier.height(textSpacer))
                 TextField(
                     modifier = Modifier
-                        .background(shape = RoundedCornerShape(10.dp), color = Color.Gray)
-                        .fillMaxWidth(),
+                        .background(shape = RoundedCornerShape(20.dp), color = Color.Gray)
+                        .fillMaxWidth()
+                        .clip(shape = RoundedCornerShape(20.dp)),
                     value = city,
                     onValueChange = {
                         city = it
@@ -272,15 +291,14 @@ fun ProfileCreateScreen(
 
             Button(
                 modifier = Modifier
-                    .padding(top = 30.dp, start = 30.dp, end = 30.dp, bottom = 100.dp)
+                    .padding(top = 30.dp, start = 30.dp, end = 30.dp)
                     .width(200.dp),
                 onClick = {
 
                     // on below line we are adding data.
                     val profileData = ProfileData(name, address, city)
 
-                    val newRef = databaseReference.child(userId.uid)
-                    newRef.setValue(profileData)
+                    userId?.let { databaseReference.child(it.uid) }?.setValue(profileData)
                     Log.d("error-firebase-database", "onCancelled:")
                     databaseReference.addValueEventListener(object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
@@ -313,7 +331,9 @@ fun ProfileCreateScreen(
 
                 },
                 shape = RoundedCornerShape(10.dp),
-
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = UIBlue
+                )
                 ) {
 
                 Text(
@@ -322,6 +342,32 @@ fun ProfileCreateScreen(
                     fontWeight = FontWeight.Medium
                 )
 
+            }
+
+            // logout button
+            if (!isProfileNotCreated) {
+                Button(
+                    modifier = Modifier
+                        .padding(top = 30.dp, start = 30.dp, end = 30.dp,)
+                        .width(200.dp),
+                    onClick = {
+                        mAuth.signOut()
+                        navController.popBackStack()
+                        navController.navigate(Routes.SplashScreen.id)
+                    },
+                    shape = RoundedCornerShape(10.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = UIBlue
+                    )
+                    ) {
+
+                    Text(
+                        text = "LogOut",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+
+                }
             }
 
         }

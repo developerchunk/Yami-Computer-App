@@ -1,6 +1,12 @@
 package com.example.yamicomputer.screen
 
+import android.content.Context
+import android.graphics.Color.parseColor
 import android.widget.Toast
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.scaleIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,9 +16,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Add
@@ -32,7 +38,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
@@ -44,14 +49,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import coil.compose.rememberImagePainter
+import coil.compose.rememberAsyncImagePainter
 import com.example.yamicomputer.data.ComplaintData
 import com.example.yamicomputer.data.ComplaintStatus
 import com.example.yamicomputer.data.ProfileActions
 import com.example.yamicomputer.logic.SharedViewModel
 import com.example.yamicomputer.navigation.Routes.AddComplaintScreen
+import com.example.yamicomputer.palette.PaletteGenerator.convertImageUrlToBitmap
+import com.example.yamicomputer.palette.PaletteGenerator.extractColorsFromBitmap
 import com.example.yamicomputer.ui.theme.DarkBlue
-import com.example.yamicomputer.ui.theme.LightBlue
 import com.example.yamicomputer.ui.theme.Purple40
 import com.google.firebase.Firebase
 import com.google.firebase.database.ChildEventListener
@@ -78,6 +84,10 @@ fun TotalComplaintScreen(
     val databaseReference = firebaseDatabase.getReference("customer-complaints")
 
     val context = LocalContext.current
+
+    var expandedLaunched by remember {
+        mutableStateOf(false)
+    }
 
 
     LaunchedEffect(key1 = Unit) {
@@ -199,10 +209,17 @@ fun TotalComplaintScreen(
                 complaintStatus,
                 sharedViewModel,
                 navController,
-                profileActions = if (complaintStatus == ComplaintStatus.COMPLETE || complaintStatus == ComplaintStatus.OUTWARDS) ProfileActions.OUTWARD_COMPLAINT else ProfileActions.UPDATE_PROFILE
+                profileActions = if (complaintStatus == ComplaintStatus.COMPLETE || complaintStatus == ComplaintStatus.OUTWARDS) ProfileActions.OUTWARD_COMPLAINT else ProfileActions.UPDATE_PROFILE,
+                context,
+                expandedLaunched,
+                true,
             )
 
         }
+    }
+
+    LaunchedEffect(key1 = true) {
+        expandedLaunched = true
     }
 
 }
@@ -213,98 +230,220 @@ fun ComplaintListUI(
     complaintStatus: ComplaintStatus,
     sharedViewModel: SharedViewModel,
     navController: NavController,
-    profileActions: ProfileActions = ProfileActions.UPDATE_PROFILE
+    profileActions: ProfileActions = ProfileActions.UPDATE_PROFILE,
+    context: Context,
+    expandedLaunched: Boolean,
+    launched: Boolean
 ) {
 
-    var search by rememberSaveable {
-        mutableStateOf("")
+    var expanded by remember {
+        mutableStateOf(expandedLaunched)
     }
 
-    Row {
-//        TextField(
-//            modifier = Modifier.fillMaxWidth(),
-//            value = search, onValueChange = { s ->
-//                search = s
-//            }, trailingIcon = {
-//                Icon(
-//                    imageVector = Icons.Rounded.Search, contentDescription = "search"
-//                )
-//            }
-//        )
-    }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
 
-    val scrollState = rememberScrollState()
+            LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                items(list.reversed().filterComplaintStatus(complaintStatus)) {
 
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .verticalScroll(scrollState)) {
-
-
-        (list.reversed().filterComplaintStatus(complaintStatus)).forEach {
-
-            var imageUri by remember {
-                mutableStateOf<String?>(null)
-            }
-
-            LaunchedEffect(key1 = Unit) {
-                if (it.photo.isNotEmpty()) {
-                    imageUri = getImageUrlFromFirebaseStorage("images/${it.photo}")
-                }
-
-            }
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(15.dp)
-                    .clickable {
-                        sharedViewModel.id.value = it.complaintId
-                        sharedViewModel.complaintData.value = it
-                        sharedViewModel.profileAction.value = profileActions
-                        navController.navigate(AddComplaintScreen.id)
-                    },
-                colors = CardDefaults.cardColors(containerColor = LightBlue),
-            ) {
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(15.dp)
-                            .fillMaxWidth(if (it.photo.isNotEmpty()) 0.6f else 1f)
-                    ) {
-
-                        Text(text = "Name: ${it.name}")
-                        Text(text = "Date: ${it.date}")
-                        Text(text = "Item: ${it.item}")
-                        Text(text = "Problem: ${it.problem}")
-                        Text(text = "Status: ${it.status}")
-
+                    var imageUri by remember {
+                        mutableStateOf<String?>(null)
                     }
 
-                    if (it.photo.isNotEmpty()) {
-                        imageUri?.let { uri ->
-                            val painter = rememberImagePainter(uri)
-                            Card(
-                                modifier = Modifier
-                                    .size(150.dp)
-                                    .padding(8.dp),
-                                shape = RoundedCornerShape(20.dp)
-                            ) {
-                                Image(
-                                    painter = painter,
-                                    contentDescription = "Selected Image",
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.FillBounds
+                    var colors by remember {
+                        mutableStateOf(mapOf<String, String>())
+                    }
+
+                    var vibrant by remember { mutableStateOf("#B5DAFF") }
+                    var darkVibrant by remember { mutableStateOf("#000000") }
+                    var onDarkVibrant by remember { mutableStateOf("#000000") }
+
+                    LaunchedEffect(key1 = Unit) {
+
+                        expanded = launched
+
+                        if (it.photo.isNotEmpty()) {
+                            imageUri = getImageUrlFromFirebaseStorage("images/${it.photo}")
+                        }
+
+                        if (!imageUri.isNullOrEmpty()) {
+                            try {
+                                val bitmap = convertImageUrlToBitmap(
+                                    imageUrl = imageUri ?: "",
+                                    context = context
                                 )
+                                if (bitmap != null) {
+
+                                    colors = extractColorsFromBitmap(bitmap = bitmap)
+                                    vibrant = colors["vibrant"] ?: vibrant
+                                    darkVibrant = colors["darkVibrant"] ?: darkVibrant
+                                    onDarkVibrant = colors["onDarkVibrant"] ?: onDarkVibrant
+                                }
+                            } catch (e: Exception) {
+//                                Toast.makeText(context, e.message, Toast.LENGTH_SHORT).show()
                             }
                         }
-                    }
-                }
 
+                    }
+
+                    AnimatedVisibility(
+                        visible = expanded,
+                        enter = scaleIn() + expandVertically(
+                            expandFrom = Alignment.CenterVertically,
+                            animationSpec = tween(durationMillis = 1000)
+                        ),
+
+                        ) {
+
+                    Card(
+                        modifier = Modifier
+                            .padding(horizontal = 20.dp, vertical = 10.dp)
+                            .fillMaxWidth()
+                            .clickable {
+                                sharedViewModel.id.value = it.complaintId
+                                sharedViewModel.complaintData.value = it
+                                sharedViewModel.profileAction.value = profileActions
+                                navController.navigate(AddComplaintScreen.id)
+                            },
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color(parseColor(vibrant)).copy(
+                                alpha = 0.6f
+                            )
+                        ),
+                    ) {
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(15.dp)
+                                    .fillMaxWidth(if (it.photo.isNotEmpty()) 0.6f else 1f)
+                            ) {
+
+                                Text(
+                                    text = "Name: ${it.name}",
+                                    color = Color(parseColor(onDarkVibrant))
+                                )
+                                Text(
+                                    text = "Date: ${it.date}",
+                                    color = Color(parseColor(onDarkVibrant))
+                                )
+                                Text(
+                                    text = "Item: ${it.item}",
+                                    color = Color(parseColor(onDarkVibrant))
+                                )
+                                Text(
+                                    text = "Problem: ${it.problem}",
+                                    color = Color(parseColor(onDarkVibrant))
+                                )
+                                Text(
+                                    text = "Status: ${it.status}",
+                                    color = Color(parseColor(onDarkVibrant))
+                                )
+
+                            }
+
+                            if (it.photo.isNotEmpty()) {
+                                imageUri?.let { uri ->
+                                    val painter = rememberAsyncImagePainter(uri)
+                                    Card(
+                                        modifier = Modifier
+                                            .size(150.dp)
+                                            .padding(8.dp),
+                                        shape = RoundedCornerShape(20.dp)
+                                    ) {
+                                        Image(
+                                            painter = painter,
+                                            contentDescription = "Selected Image",
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.FillBounds
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+
+                }
             }
         }
+
+
+//        (list.reversed().filterComplaintStatus(complaintStatus)).forEach {
+//
+//
+//            var imageUri by remember {
+//                mutableStateOf<String?>(null)
+//            }
+//
+//            LaunchedEffect(key1 = Unit) {
+//                if (it.photo.isNotEmpty()) {
+//                    imageUri = getImageUrlFromFirebaseStorage("images/${it.photo}")
+//                }
+//
+//            }
+//            Card(
+//                modifier = Modifier
+//                    .padding(horizontal = 20.dp, vertical = 10.dp)
+//                    .fillMaxWidth()
+//                    .clickable {
+//                        sharedViewModel.id.value = it.complaintId
+//                        sharedViewModel.complaintData.value = it
+//                        sharedViewModel.profileAction.value = profileActions
+//                        navController.navigate(AddComplaintScreen.id)
+//                    },
+//                colors = CardDefaults.cardColors(containerColor = LightBlue),
+//            ) {
+//
+//                Row(
+//                    modifier = Modifier
+//                        .fillMaxWidth()
+//                        .padding(10.dp),
+//                    horizontalArrangement = Arrangement.SpaceBetween
+//                ) {
+//                    Column(
+//                        modifier = Modifier
+//                            .padding(15.dp)
+//                            .fillMaxWidth(if (it.photo.isNotEmpty()) 0.6f else 1f)
+//                    ) {
+//
+//                        Text(text = "Name: ${it.name}")
+//                        Text(text = "Date: ${it.date}")
+//                        Text(text = "Item: ${it.item}")
+//                        Text(text = "Problem: ${it.problem}")
+//                        Text(text = "Status: ${it.status}")
+//
+//                    }
+//
+//                    if (it.photo.isNotEmpty()) {
+//                        imageUri?.let { uri ->
+//                            val painter = rememberImagePainter(uri)
+//                            Card(
+//                                modifier = Modifier
+//                                    .size(150.dp)
+//                                    .padding(8.dp),
+//                                shape = RoundedCornerShape(20.dp)
+//                            ) {
+//                                Image(
+//                                    painter = painter,
+//                                    contentDescription = "Selected Image",
+//                                    modifier = Modifier.fillMaxSize(),
+//                                    contentScale = ContentScale.FillBounds
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//
+//            }
+//        }
     }
 }
 
