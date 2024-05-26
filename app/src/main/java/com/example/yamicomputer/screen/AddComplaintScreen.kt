@@ -213,6 +213,14 @@ fun AddComplaintScreen(
         mutableStateOf(false)
     }
 
+    var sendMessage by remember {
+        mutableStateOf(false)
+    }
+
+    var message by remember {
+        mutableStateOf("")
+    }
+
 
     // on below line creating variable for freebase database
     // and database reference.
@@ -534,7 +542,8 @@ fun AddComplaintScreen(
         LaunchedEffect(key1 = Unit) {
             if (smsPermissionState.status.isGranted) {
 
-                val newRef = if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
+                val newRef =
+                    if (idNotEmpty) databaseReference.child(id) else databaseReference.push()
 
                 selectedImageUri?.let {
                     uploadPhotoToFirebase(
@@ -563,6 +572,10 @@ fun AddComplaintScreen(
 
                             databaseReference.addValueEventListener(object : ValueEventListener {
                                 override fun onDataChange(snapshot: DataSnapshot) {
+
+//                                    message = "Hello $name, Welcome to YAMI Computers\nYour item: $item which had the problem: $problem is now in the ${complaintStatus.name} stage, we will update you if any changes happens in future"
+                                    sendMessage = true
+
                                     // Data has changed
                                     Toast.makeText(
                                         context,
@@ -570,29 +583,14 @@ fun AddComplaintScreen(
                                         Toast.LENGTH_SHORT
                                     ).show()
 
-                                    // on below line initializing sms manager.
-                                    val smsManager: SmsManager =
-                                        context.getSystemService(SmsManager::class.java)
-
-                                    // sending the message
-                                    if (mobileNo.isNotEmpty()) {
-                                        smsManager.sendTextMessage(
-                                            mobileNo,
-                                            null,
-                                            "Hello ${complaintDataEdited.name}, Welcome to YAMI Computers\nYour item: ${complaintDataEdited.item} which had the problem: ${complaintDataEdited.problem} is now in the ${complaintDataEdited.status} stage, we will update you if any changes happens in future",
-                                            null,
-                                            null
-                                        )
-                                    }
-
-                                    if (!idNotEmpty) {
-                                        name = ""
-                                        date = ""
-                                        item = ""
-                                        problem = ""
-                                        charge = ""
-                                        photo = ""
-                                    }
+//                                    if (!idNotEmpty) {
+//                                        name = ""
+//                                        date = ""
+//                                        item = ""
+//                                        problem = ""
+//                                        charge = ""
+//                                        photo = ""
+//                                    }
 
                                 }
 
@@ -635,6 +633,16 @@ fun AddComplaintScreen(
 
                     databaseReference.addValueEventListener(object : ValueEventListener {
                         override fun onDataChange(snapshot: DataSnapshot) {
+
+//                            message = "Hello $name, Welcome to YAMI Computers\nYour item: $item which had the problem: $problem is in the progress, we will update you if any changes happens in future"
+                            sendMessage = true
+
+//                            sendSMSMessage(
+//                                context = context,
+//                                message = "Hello ${complaintDataEdited.name}, Welcome to YAMI Computers\nYour item: ${complaintDataEdited.item} which had the problem: ${complaintDataEdited.problem} is now in the ${complaintDataEdited.status} stage, we will update you if any changes happens in future",
+//                                mobileNo = "+918446012585"
+//                            )
+
                             // Data has changed
                             Toast.makeText(
                                 context,
@@ -642,31 +650,18 @@ fun AddComplaintScreen(
                                 Toast.LENGTH_SHORT
                             ).show()
 
-                            // on below line initializing sms manager.
-                            val smsManager: SmsManager =
-                                context.getSystemService(SmsManager::class.java)
 
-                            // sending the message
-                            if (mobileNo.isNotEmpty()) {
-                                smsManager.sendTextMessage(
-                                    mobileNo,
-                                    null,
-                                    "Hello ${complaintDataEdited.name}, Welcome to YAMI Computers\nYour item: ${complaintDataEdited.item} which had the problem: ${complaintDataEdited.problem} is now in the ${complaintDataEdited.status} stage, we will update you if any changes happens in future",
-                                    null,
-                                    null
-                                )
-                            }
+//                            if (!idNotEmpty) {
+//                                name = ""
+//                                date = ""
+//                                item = ""
+//                                problem = ""
+//                                charge = ""
+//                                photo = ""
+//                                selectedImageUri = null
+//                                mobileNo = ""
+//                            }
 
-                            if (!idNotEmpty) {
-                                name = ""
-                                date = ""
-                                item = ""
-                                problem = ""
-                                charge = ""
-                                photo = ""
-                                selectedImageUri = null
-                                mobileNo = ""
-                            }
 
                         }
 
@@ -692,6 +687,38 @@ fun AddComplaintScreen(
         Toast.makeText(context, "Mobile Number Not Valid!", Toast.LENGTH_LONG).show()
     }
 
+    if (sendMessage) {
+        LaunchedEffect(Unit) {
+
+            // sending the message
+            sendSMSMessage(
+                context = context,
+                message = "Hello from YAMI Computers, your item has been received at our store for repair/services, we will update you if any changes happens in future ",
+                mobileNo = "+91$mobileNo"
+            )
+
+            sendMessage = false
+        }
+    }
+
+}
+
+fun sendSMSMessage(
+    context: Context,
+    message: String,
+    mobileNo: String
+) {
+    // on below line initializing sms manager.
+    val smsManager: SmsManager =
+        context.getSystemService(SmsManager::class.java)
+
+    smsManager.sendTextMessage(
+        mobileNo,
+        null,
+        message,
+        null,
+        null
+    )
 }
 
 @Composable

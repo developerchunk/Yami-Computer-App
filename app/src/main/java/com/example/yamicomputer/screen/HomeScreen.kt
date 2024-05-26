@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,6 +78,8 @@ fun HomeScreen(
     var dateProfile by remember {
         mutableStateOf(ProfileData("", "", ""))
     }
+
+    val context = LocalContext.current
 
     myRef.addValueEventListener(object : ValueEventListener {
         override fun onDataChange(snapshot: DataSnapshot) {
@@ -299,6 +302,35 @@ fun HomeScreen(
                         onClick = {
                             sharedViewModel.productAction.value = ProductActions.CREATE
                             navController.navigate(Routes.AllProductsScreen.id)
+                        }
+                    )
+                }
+
+                // Buttons
+                Row(
+                    modifier = Modifier
+                        .padding(top = 20.dp, start = 10.dp, end = 10.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        space = 18.dp,
+                        alignment = Alignment.CenterHorizontally
+                    )
+                ) {
+                    // OUTWARDS
+                    ActivityCardItems(
+                        activityCardData = ActivityCardData(
+                            text = "Send SMS",
+                            icon = complaintDataList.filter { it.status == ComplaintStatus.OUTWARDS.name }.size,
+                            bgColor = Pink40,
+                            cardColor = Pink80,
+                            key = ""
+                        ),
+                        onClick = {
+                            sendSMSMessage(
+                                context = context,
+                                "smaple",
+                                "+918446012585"
+                            )
                         }
                     )
                 }

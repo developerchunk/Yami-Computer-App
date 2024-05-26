@@ -54,7 +54,7 @@ class SharedViewModel : ViewModel() {
             profileReference.child(userId.uid).addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(dataSnapshot: DataSnapshot) {
                     // Get the data as a User object
-                    dataSet.value = dataSnapshot.getValue<ProfileData>()!!
+                    dataSet.value = dataSnapshot.getValue<ProfileData>()?: ProfileData()
                 }
 
                 override fun onCancelled(error: DatabaseError) {

@@ -46,8 +46,7 @@ fun NavGraph(
         composable(route = Routes.AddComplaintScreen.id) {
             AddComplaintScreen(
                 navController = navHostController,
-                sharedViewModel = sharedViewModel,
-                activity = componentActivity
+                sharedViewModel = sharedViewModel
             )
         }
 
